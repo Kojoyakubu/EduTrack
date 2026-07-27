@@ -9,7 +9,7 @@
 {% block content %}
 <div class="page-header">
   <div>
-    <h2 class="page-heading">Good {{ 'Morning' if now.hour < 12 else ('Afternoon' if now.hour < 17 else 'Evening') }}, {{ current_user.full_name.split()[0] }}</h2>
+    <h2 class="page-heading">Good {{ 'Morning' if now.hour < 12 else ('Afternoon' if now.hour < 17 else 'Evening') }}</h2>
     <p class="page-sub">Here's what's happening today — <strong>{{ today.strftime('%A, %d %B %Y') }}</strong></p>
   </div>
   <div class="header-actions">
