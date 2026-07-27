@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}{{ student.full_name }}{% endblock %}
+{% block page_title %}Student Profile{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2 class="page-heading">{{ student.full_name }}</h2>
+  <div class="header-actions">
+    <a href="{{ url_for('students.edit', student_id=student.id) }}" class="btn btn-outline">
+      <i class="fas fa-edit"></i> Edit
+    </a>
+    <a href="{{ url_for('reports.student_report', student_id=student.id) }}" class="btn btn-primary">
+      <i class="fas fa-chart-bar"></i> Report
+    </a>
+  </div>
+</div>
+
+<div class="profile-grid">
+  <!-- Student Info Card -->
+  <div class="card profile-card">
+    <div class="profile-banner"></div>
+    <div class="profile-body">
+      <div class="profile-avatar">{{ student.full_name[0] }}</div>
+      <h3>{{ student.full_name }}</h3>
+      <p class="profile-sub">{{ student.class_.name }}</p>
+      <span class="badge badge-{{ 'success' if student.is_active else 'danger' }}">
+        {{ 'Active' if student.is_active else 'Inactive' }}
+      </span>
+
+      <div class="profile-details mt-3">
+        <div class="detail-row">
+          <span class="detail-label"><i class="fas fa-id-badge"></i> Student ID</span>
+          <span><code>{{ student.student_id }}</code></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label"><i class="fas fa-venus-mars"></i> Gender</span>
+          <span>{{ student.gender }}</span>
+        </div>
+        {% if student.date_of_birth %}
+        <div class="detail-row">
+          <span class="detail-label"><i class="fas fa-calendar"></i> Date of Birth</span>
+          <span>{{ student.date_of_birth.strftime('%d %B %Y') }}</span>
+        </div>
+        {% endif %}
+        {% if student.rfid_tag %}
+        <div class="detail-row">
+          <span class="detail-label"><i class="fas fa-wifi"></i> RFID Tag</span>
+          <span><code>{{ student.rfid_tag }}</code></span>
+        </div>
+        {% endif %}
+        {% if student.address %}
+        <div class="detail-row">
+          <span class="detail-label"><i class="fas fa-home"></i> Address</span>
+          <span>{{ student.address }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Guardians -->
+  <div class="card">
+    <div class="card-header">
+      <h3><i class="fas fa-user-friends"></i> Guardians</h3>
+    </div>
+    <div class="card-body">
+      {% for guardian in student.guardians %}
+      <div class="guardian-card {% if guardian.is_primary %}guardian-primary{% endif %}">
+        <div class="guardian-icon"><i class="fas fa-user"></i></div>
+        <div class="guardian-info">
+          <div class="guardian-name">
+            {{ guardian.full_name }}
+            {% if guardian.is_primary %}
+              <span class="badge badge-primary">Primary</span>
+            {% endif %}
+          </div>
+          <div class="guardian-meta">{{ guardian.relationship }}</div>
+          <div class="guardian-contact">
+            <i class="fas fa-phone"></i> {{ guardian.phone }}
+            {% if guardian.email %}
+              &nbsp; <i class="fas fa-envelope"></i> {{ guardian.email }}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+
+      <!-- Add guardian form -->
+      <hr />
+      <h4 style="font-size:14px; margin-bottom:12px;">Add Another Guardian</h4>
+      <form method="POST" action="{{ url_for('students.add_guardian', student_id=student.id) }}">
+        <div class="form-row">
+          <div class="form-group">
+            <input type="text" name="g_name" class="form-control" placeholder="Full name" required />
+          </div>
+          <div class="form-group">
+            <select name="g_relationship" class="form-control" required>
+              <option value="">Relationship</option>
+              <option>Father</option><option>Mother</option><option>Guardian</option>
+              <option>Uncle</option><option>Aunt</option><option>Sibling</option><option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <input type="tel" name="g_phone" class="form-control" placeholder="Phone" required />
+          </div>
+          <div class="form-group">
+            <input type="email" name="g_email" class="form-control" placeholder="Email (optional)" />
+          </div>
+        </div>
+        <button type="submit" class="btn btn-outline btn-sm"><i class="fas fa-plus"></i> Add Guardian</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Attendance -->
+<div class="card mt-4">
+  <div class="card-header">
+    <h3><i class="fas fa-clipboard-list"></i> Recent Attendance (Last 30 Days)</h3>
+    <a href="{{ url_for('reports.student_report', student_id=student.id) }}" class="btn-link">Full Report</a>
+  </div>
+  <div class="card-body p0">
+    {% if recent_attendance %}
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr><th>Date</th><th>Status</th><th>Arrival</th><th>Departure</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          {% for rec in recent_attendance %}
+          <tr>
+            <td>{{ rec.date.strftime('%a, %d %b %Y') }}</td>
+            <td>
+              <span class="badge badge-{% if rec.status == 'present' %}success{% elif rec.status == 'late' %}warning{% elif rec.status == 'absent' %}danger{% else %}secondary{% endif %}">
+                {{ rec.status|title }}
+              </span>
+            </td>
+            <td>{{ rec.arrival_time.strftime('%I:%M %p') if rec.arrival_time else '—' }}</td>
+            <td>{{ rec.departure_time.strftime('%I:%M %p') if rec.departure_time else '—' }}</td>
+            <td class="text-muted">{{ rec.notes or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <div class="empty-state-sm"><i class="fas fa-clipboard"></i> No attendance records yet</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-heading">Good {{ 'Morning' if now.hour < 12 else ('Afternoon' if now.hour < 17 else 'Evening') }}, {{ current_user.full_name.split()[0] }}</h2>
+    <p class="page-sub">Here's what's happening today — <strong>{{ today.strftime('%A, %d %B %Y') }}</strong></p>
+  </div>
+  <div class="header-actions">
+    <a href="{{ url_for('attendance.mark_arrival') }}" class="btn btn-success">
+      <i class="fas fa-sign-in-alt"></i> Mark Arrival
+    </a>
+    <a href="{{ url_for('attendance.mark_departure') }}" class="btn btn-primary">
+      <i class="fas fa-sign-out-alt"></i> Mark Departure
+    </a>
+  </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+  <div class="stat-card stat-blue">
+    <div class="stat-icon"><i class="fas fa-users"></i></div>
+    <div class="stat-body">
+      <div class="stat-value">{{ total_students }}</div>
+      <div class="stat-label">Total Students</div>
+    </div>
+  </div>
+  <div class="stat-card stat-green">
+    <div class="stat-icon"><i class="fas fa-user-check"></i></div>
+    <div class="stat-body">
+      <div class="stat-value">{{ present_today }}</div>
+      <div class="stat-label">Present Today</div>
+    </div>
+    <div class="stat-footer">{{ ((present_today / total_students * 100)|round(1) if total_students else 0) }}% attendance</div>
+  </div>
+  <div class="stat-card stat-orange">
+    <div class="stat-icon"><i class="fas fa-clock"></i></div>
+    <div class="stat-body">
+      <div class="stat-value">{{ late_today }}</div>
+      <div class="stat-label">Late Arrivals</div>
+    </div>
+  </div>
+  <div class="stat-card stat-red">
+    <div class="stat-icon"><i class="fas fa-user-times"></i></div>
+    <div class="stat-body">
+      <div class="stat-value">{{ absent_today }}</div>
+      <div class="stat-label">Absent Today</div>
+    </div>
+  </div>
+  <div class="stat-card stat-purple">
+    <div class="stat-icon"><i class="fas fa-sign-out-alt"></i></div>
+    <div class="stat-body">
+      <div class="stat-value">{{ departed_today }}</div>
+      <div class="stat-label">Departed</div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts + Recent Activity -->
+<div class="dashboard-grid">
+  <div class="card chart-card">
+    <div class="card-header">
+      <h3><i class="fas fa-chart-line"></i> Weekly Attendance</h3>
+    </div>
+    <div class="card-body">
+      <canvas id="weeklyChart" height="220"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3><i class="fas fa-bell"></i> Recent Notifications</h3>
+      <a href="{{ url_for('admin.notifications') }}" class="btn-link">View all</a>
+    </div>
+    <div class="card-body p0">
+      {% if recent_notifications %}
+        <ul class="notif-list">
+          {% for notif in recent_notifications %}
+          <li class="notif-item notif-{{ notif.event_type }}">
+            <div class="notif-icon">
+              <i class="fas {% if notif.event_type == 'arrival' %}fa-sign-in-alt{% elif notif.event_type == 'departure' %}fa-sign-out-alt{% else %}fa-exclamation{% endif %}"></i>
+            </div>
+            <div class="notif-body">
+              <div class="notif-title">{{ notif.student.full_name }}</div>
+              <div class="notif-meta">{{ notif.event_type|title }} • {{ notif.sent_at.strftime('%I:%M %p') }} • 
+                <span class="badge badge-{{ 'success' if notif.status == 'sent' else 'danger' }}">{{ notif.status }}</span>
+              </div>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="empty-state-sm"><i class="fas fa-bell-slash"></i> No notifications today</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Recent Arrivals Table -->
+<div class="card mt-4">
+  <div class="card-header">
+    <h3><i class="fas fa-sign-in-alt"></i> Today's Arrivals</h3>
+    <a href="{{ url_for('attendance.index') }}" class="btn-link">Full attendance sheet</a>
+  </div>
+  <div class="card-body p0">
+    {% if recent_arrivals %}
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>ID</th>
+            <th>Class</th>
+            <th>Arrival Time</th>
+            <th>Status</th>
+            <th>Departed</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record, student in recent_arrivals %}
+          <tr>
+            <td><a href="{{ url_for('students.detail', student_id=student.id) }}">{{ student.full_name }}</a></td>
+            <td><code>{{ student.student_id }}</code></td>
+            <td>{{ student.class_.name }}</td>
+            <td>{{ record.arrival_time.strftime('%I:%M %p') }}</td>
+            <td><span class="badge badge-{{ 'warning' if record.status == 'late' else 'success' }}">{{ record.status|title }}</span></td>
+            <td>
+              {% if record.departure_time %}
+                <span class="text-muted">{{ record.departure_time.strftime('%I:%M %p') }}</span>
+              {% else %}
+                <span class="text-light">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <div class="empty-state-sm"><i class="fas fa-clipboard"></i> No arrivals recorded yet today</div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const ctx = document.getElementById('weeklyChart').getContext('2d');
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: {{ week_labels | tojson }},
+    datasets: [
+      {
+        label: 'Present',
+        data: {{ week_present | tojson }},
+        backgroundColor: 'rgba(39, 174, 96, 0.8)',
+        borderRadius: 4
+      },
+      {
+        label: 'Absent',
+        data: {{ week_absent | tojson }},
+        backgroundColor: 'rgba(231, 76, 60, 0.7)',
+        borderRadius: 4
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position: 'top' } },
+    scales: {
+      y: { beginAtZero: true, ticks: { stepSize: 1 } }
+    }
+  }
+});
+</script>
+{% endblock %}

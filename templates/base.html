@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}EDU TRACK{% endblock %} — Oyoko Methodist SHS</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+{% if current_user.is_authenticated %}
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">
+      <img src="{{ url_for('static', filename='images/omess.png') }}" alt="Oyoko Methodist SHS Logo" class="brand-logo-img" />
+    </div>
+    <div>
+      <div class="brand-title">EDU TRACK</div>
+      <div class="brand-sub">Oyoko Methodist SHS</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a href="{{ url_for('dashboard.index') }}" class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+      <i class="fas fa-tachometer-alt"></i> Dashboard
+    </a>
+
+    <div class="nav-section">ATTENDANCE</div>
+    <a href="{{ url_for('attendance.mark_arrival') }}" class="nav-item {% if request.endpoint == 'attendance.mark_arrival' %}active{% endif %}">
+      <i class="fas fa-sign-in-alt"></i> Mark Arrival
+    </a>
+    <a href="{{ url_for('attendance.mark_departure') }}" class="nav-item {% if request.endpoint == 'attendance.mark_departure' %}active{% endif %}">
+      <i class="fas fa-sign-out-alt"></i> Mark Departure
+    </a>
+    <a href="{{ url_for('attendance.index') }}" class="nav-item {% if request.endpoint == 'attendance.index' %}active{% endif %}">
+      <i class="fas fa-clipboard-list"></i> View Records
+    </a>
+
+    <div class="nav-section">STUDENTS</div>
+    <a href="{{ url_for('students.index') }}" class="nav-item {% if 'students.' in request.endpoint %}active{% endif %}">
+      <i class="fas fa-users"></i> All Students
+    </a>
+    <a href="{{ url_for('students.register') }}" class="nav-item {% if request.endpoint == 'students.register' %}active{% endif %}">
+      <i class="fas fa-user-plus"></i> Register Student
+    </a>
+
+    <div class="nav-section">REPORTS</div>
+    <a href="{{ url_for('reports.index') }}" class="nav-item {% if request.endpoint == 'reports.index' %}active{% endif %}">
+      <i class="fas fa-chart-bar"></i> Attendance Report
+    </a>
+
+    {% if current_user.is_admin() %}
+    <div class="nav-section">ADMINISTRATION</div>
+    <a href="{{ url_for('admin.users') }}" class="nav-item {% if request.endpoint == 'admin.users' %}active{% endif %}">
+      <i class="fas fa-user-shield"></i> Manage Users
+    </a>
+    <a href="{{ url_for('admin.classes') }}" class="nav-item {% if request.endpoint == 'admin.classes' %}active{% endif %}">
+      <i class="fas fa-school"></i> Manage Classes
+    </a>
+    <a href="{{ url_for('admin.notifications') }}" class="nav-item {% if request.endpoint == 'admin.notifications' %}active{% endif %}">
+      <i class="fas fa-bell"></i> Notifications Log
+    </a>
+    <a href="{{ url_for('admin.settings') }}" class="nav-item {% if request.endpoint == 'admin.settings' %}active{% endif %}">
+      <i class="fas fa-cog"></i> System Settings
+    </a>
+    {% endif %}
+  </nav>
+</aside>
+
+<!-- Main layout -->
+<div class="main-wrapper">
+  <header class="topbar">
+    <button class="sidebar-toggle" onclick="toggleSidebar()">
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="topbar-title-wrap">
+      <img src="{{ url_for('static', filename='images/omess.png') }}" alt="Oyoko Methodist SHS Logo" class="topbar-school-logo" />
+      <div class="topbar-title">{% block page_title %}{% endblock %}</div>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-date">{{ now.strftime('%a, %d %b %Y') if now else '' }}</span>
+      <div class="user-menu">
+        <button class="user-btn" onclick="toggleUserMenu()">
+          <i class="fas fa-user-circle"></i>
+          <span>{{ current_user.full_name.split()[0] }}</span>
+          <i class="fas fa-chevron-down" style="font-size:11px;"></i>
+        </button>
+        <div class="user-dropdown" id="userDropdown">
+          <div class="user-info">
+            <div class="user-info-name">{{ current_user.full_name }}</div>
+            <div class="user-info-role">{{ current_user.role|title }}</div>
+          </div>
+          <a href="{{ url_for('admin.change_password') }}"><i class="fas fa-key"></i> Change Password</a>
+          <a href="{{ url_for('auth.logout') }}" style="color:#e74c3c;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="alerts-container">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'danger' %}fa-times-circle{% elif category == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}"></i>
+              {{ message }}
+              <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+{% else %}
+  {% block unauth_content %}{% endblock %}
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Notification Logs{% endblock %}
+{% block page_title %}Notification Logs{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2 class="page-heading">Notification Logs</h2>
+</div>
+
+<div class="card">
+  <div class="card-body p0">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Student</th>
+            <th>Event</th>
+            <th>Recipient</th>
+            <th>Channel</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs.items %}
+          <tr>
+            <td class="text-muted">{{ log.sent_at.strftime('%d %b %Y %I:%M %p') }}</td>
+            <td>
+              <a href="{{ url_for('students.detail', student_id=log.student_id) }}">
+                {{ log.student.full_name }}
+              </a>
+            </td>
+            <td>
+              <span class="badge badge-{% if log.event_type == 'arrival' %}success{% elif log.event_type == 'departure' %}primary{% elif log.event_type == 'late' %}warning{% else %}danger{% endif %}">
+                {{ log.event_type|title }}
+              </span>
+            </td>
+            <td>{{ log.recipient_contact }}</td>
+            <td>{{ log.channel|title }}</td>
+            <td>
+              <span class="badge badge-{{ 'success' if log.status == 'sent' else ('warning' if log.status == 'pending' else 'danger') }}">
+                {{ log.status|title }}
+              </span>
+              {% if log.error_message %}
+                <span class="text-danger" title="{{ log.error_message }}" style="cursor:help;">
+                  <i class="fas fa-info-circle"></i>
+                </span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if logs.pages > 1 %}
+    <div class="pagination">
+      {% if logs.has_prev %}
+        <a href="{{ url_for('admin.notifications', page=logs.prev_num) }}" class="btn btn-sm btn-outline">
+          <i class="fas fa-chevron-left"></i> Prev
+        </a>
+      {% endif %}
+      <span class="page-info">Page {{ logs.page }} of {{ logs.pages }}</span>
+      {% if logs.has_next %}
+        <a href="{{ url_for('admin.notifications', page=logs.next_num) }}" class="btn btn-sm btn-outline">
+          Next <i class="fas fa-chevron-right"></i>
+        </a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

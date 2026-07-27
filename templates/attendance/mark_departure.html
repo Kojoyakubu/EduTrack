@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Mark Departure{% endblock %}
+{% block page_title %}Mark Departure{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2 class="page-heading">Mark Student Departure</h2>
+  <span class="live-clock" id="liveClock"></span>
+</div>
+
+<div class="attendance-scanner-layout">
+  <div class="card scanner-card">
+    <div class="card-header">
+      <h3><i class="fas fa-sign-out-alt text-blue"></i> Record Departure</h3>
+    </div>
+    <div class="card-body">
+      <div class="info-box">
+        <i class="fas fa-info-circle"></i>
+        Enter a student ID or RFID tag number to record their departure. A parent notification will be sent.
+      </div>
+
+      <form method="POST" action="{{ url_for('attendance.mark_departure') }}" id="departureForm">
+        <div class="scanner-input-group">
+          <input type="text" name="identifier" id="identifier" class="form-control scanner-input"
+                 placeholder="Scan RFID or type Student ID..."
+                 autofocus autocomplete="off" />
+          <button type="submit" class="btn btn-primary btn-lg">
+            <i class="fas fa-sign-out-alt"></i> Mark Departed
+          </button>
+        </div>
+      </form>
+
+      {% if last_student %}
+      <div class="last-scan-result result-info">
+        <div class="result-icon"><i class="fas fa-check-circle"></i></div>
+        <div class="result-body">
+          <div class="result-name">{{ last_student.full_name }}</div>
+          <div class="result-meta">
+            {{ last_student.student_id }} &bull; {{ last_student.class_.name }}
+          </div>
+          <div class="result-time">Departed at {{ last_time.strftime('%I:%M %p') }}</div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3><i class="fas fa-info-circle"></i> How it works</h3>
+    </div>
+    <div class="card-body">
+      <ol class="how-it-works">
+        <li>Student presents RFID card or provides their ID</li>
+        <li>Staff enters/scans the identifier above</li>
+        <li>System records the exact departure time</li>
+        <li>Parent/Guardian receives an email notification automatically</li>
+        <li>Record is stored for reporting and accountability</li>
+      </ol>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function updateClock() {
+  const now = new Date();
+  document.getElementById('liveClock').textContent = now.toLocaleTimeString('en-GH', {
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+document.getElementById('identifier').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (this.value.trim()) {
+      document.getElementById('departureForm').submit();
+    }
+  }
+});
+</script>
+{% endblock %}

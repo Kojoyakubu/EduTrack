@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Students{% endblock %}
+{% block page_title %}Students{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2 class="page-heading">Student Registry</h2>
+  <a href="{{ url_for('students.register') }}" class="btn btn-primary">
+    <i class="fas fa-user-plus"></i> Register Student
+  </a>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <form method="GET" class="filter-form">
+      <input type="text" name="search" class="form-control" placeholder="Search by name or ID..."
+             value="{{ search }}" />
+      <select name="class_id" class="form-control">
+        <option value="">All Classes</option>
+        {% for cls in classes %}
+          <option value="{{ cls.id }}" {% if class_filter == cls.id|string %}selected{% endif %}>
+            {{ cls.name }}
+          </option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+      <a href="{{ url_for('students.index') }}" class="btn btn-outline">Clear</a>
+    </form>
+  </div>
+</div>
+
+<div class="card mt-3">
+  <div class="card-body p0">
+    {% if students.items %}
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Student ID</th>
+            <th>Class</th>
+            <th>Gender</th>
+            <th>RFID</th>
+            <th>Guardian</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for student in students.items %}
+          <tr>
+            <td>
+              <a href="{{ url_for('students.detail', student_id=student.id) }}" class="student-link">
+                <div class="student-avatar">{{ student.full_name[0] }}</div>
+                {{ student.full_name }}
+              </a>
+            </td>
+            <td><code>{{ student.student_id }}</code></td>
+            <td>{{ student.class_.name }}</td>
+            <td>{{ student.gender }}</td>
+            <td>
+              {% if student.rfid_tag %}
+                <code class="rfid-tag">{{ student.rfid_tag }}</code>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% set g = student.primary_guardian() %}
+              {% if g %}
+                {{ g.full_name }}<br>
+                <small class="text-muted">{{ g.phone }}</small>
+              {% else %}
+                <span class="text-muted">No guardian</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{{ url_for('students.detail', student_id=student.id) }}" class="btn btn-sm btn-outline" title="View">
+                <i class="fas fa-eye"></i>
+              </a>
+              <a href="{{ url_for('students.edit', student_id=student.id) }}" class="btn btn-sm btn-outline" title="Edit">
+                <i class="fas fa-edit"></i>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if students.pages > 1 %}
+    <div class="pagination">
+      {% if students.has_prev %}
+        <a href="{{ url_for('students.index', page=students.prev_num, search=search, class_id=class_filter) }}" class="btn btn-sm btn-outline">
+          <i class="fas fa-chevron-left"></i> Prev
+        </a>
+      {% endif %}
+      <span class="page-info">Page {{ students.page }} of {{ students.pages }}</span>
+      {% if students.has_next %}
+        <a href="{{ url_for('students.index', page=students.next_num, search=search, class_id=class_filter) }}" class="btn btn-sm btn-outline">
+          Next <i class="fas fa-chevron-right"></i>
+        </a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+      <div class="empty-state">
+        <i class="fas fa-users"></i>
+        <p>No students found.</p>
+        <a href="{{ url_for('students.register') }}" class="btn btn-primary">Register First Student</a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Manage Users{% endblock %}
+{% block page_title %}Manage Users{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2 class="page-heading">System Users</h2>
+  <a href="{{ url_for('admin.create_user') }}" class="btn btn-primary">
+    <i class="fas fa-user-plus"></i> Add User
+  </a>
+</div>
+
+<div class="card">
+  <div class="card-body p0">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Last Login</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          <tr>
+            <td>{{ user.full_name }}</td>
+            <td>{{ user.email }}</td>
+            <td><span class="badge badge-{% if user.role == 'admin' %}primary{% else %}secondary{% endif %}">{{ user.role|title }}</span></td>
+            <td><span class="badge badge-{{ 'success' if user.is_active else 'danger' }}">{{ 'Active' if user.is_active else 'Inactive' }}</span></td>
+            <td class="text-muted">{{ user.last_login.strftime('%d %b %Y %I:%M %p') if user.last_login else 'Never' }}</td>
+            <td>
+              {% if user.id != current_user.id %}
+              <form method="POST" action="{{ url_for('admin.toggle_user', user_id=user.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-sm btn-{{ 'danger' if user.is_active else 'success' }}"
+                        onclick="return confirm('{{ 'Deactivate' if user.is_active else 'Activate' }} {{ user.full_name }}?')">
+                  <i class="fas fa-{{ 'ban' if user.is_active else 'check' }}"></i>
+                  {{ 'Deactivate' if user.is_active else 'Activate' }}
+                </button>
+              </form>
+              {% else %}
+                <span class="text-muted">(You)</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

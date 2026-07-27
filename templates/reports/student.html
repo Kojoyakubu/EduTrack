@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Report — {{ student.full_name }}{% endblock %}
+{% block page_title %}Student Report{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2 class="page-heading">{{ student.full_name }} — Attendance Report</h2>
+  <a href="{{ url_for('reports.index') }}" class="btn btn-outline">
+    <i class="fas fa-arrow-left"></i> Back
+  </a>
+</div>
+
+<div class="stats-row">
+  <div class="stat-mini stat-green"><span>{{ present }}</span> Present</div>
+  <div class="stat-mini stat-orange"><span>{{ late }}</span> Late</div>
+  <div class="stat-mini stat-red"><span>{{ absent }}</span> Absent</div>
+  <div class="stat-mini stat-blue">
+    <span>{{ ((present / records|length * 100)|round(1)) if records else 0 }}%</span> Rate
+  </div>
+</div>
+
+<!-- Date Filter -->
+<div class="card mt-3">
+  <div class="card-body">
+    <form method="GET" class="filter-form">
+      <div class="form-group">
+        <label>From</label>
+        <input type="date" name="start" class="form-control" value="{{ start.isoformat() }}" />
+      </div>
+      <div class="form-group">
+        <label>To</label>
+        <input type="date" name="end" class="form-control" value="{{ end.isoformat() }}" />
+      </div>
+      <button type="submit" class="btn btn-primary" style="align-self:flex-end;">
+        <i class="fas fa-filter"></i> Filter
+      </button>
+    </form>
+  </div>
+</div>
+
+<div class="card mt-3">
+  <div class="card-body p0">
+    {% if records %}
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr><th>Date</th><th>Status</th><th>Arrival</th><th>Departure</th></tr>
+        </thead>
+        <tbody>
+          {% for rec in records %}
+          <tr>
+            <td>{{ rec.date.strftime('%A, %d %B %Y') }}</td>
+            <td>
+              <span class="badge badge-{% if rec.status == 'present' %}success{% elif rec.status == 'late' %}warning{% elif rec.status == 'absent' %}danger{% else %}secondary{% endif %}">
+                {{ rec.status|title }}
+              </span>
+            </td>
+            <td>{{ rec.arrival_time.strftime('%I:%M %p') if rec.arrival_time else '—' }}</td>
+            <td>{{ rec.departure_time.strftime('%I:%M %p') if rec.departure_time else '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <div class="empty-state"><i class="fas fa-chart-bar"></i><p>No records for the selected dates.</p></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block unauth_content %}
+<div class="login-page">
+  <div class="login-left">
+    <div class="login-brand">
+      <div class="login-logo">
+        <img src="{{ url_for('static', filename='images/omess.png') }}" alt="Oyoko Methodist SHS Logo" />
+      </div>
+      <h1>EDU TRACK</h1>
+      <p>Student Attendance & Movement<br>Notification System</p>
+    </div>
+    <div class="login-school">
+      <i class="fas fa-map-marker-alt"></i>
+      Oyoko Methodist Senior High School<br>Koforidua, Eastern Region
+    </div>
+  </div>
+
+  <div class="login-right">
+    <div class="login-card">
+      <h2>Welcome Back</h2>
+      <p class="login-sub">Sign in to your account</p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              <i class="fas fa-exclamation-circle"></i> {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('auth.login') }}" autocomplete="off">
+        <div class="form-group">
+          <label for="email"><i class="fas fa-envelope"></i> Email Address</label>
+          <input type="email" id="email" name="email" class="form-control"
+                 placeholder="Enter your email" required autofocus />
+        </div>
+        <div class="form-group">
+          <label for="password"><i class="fas fa-lock"></i> Password</label>
+          <div class="input-with-icon">
+            <input type="password" id="password" name="password" class="form-control"
+                   placeholder="Enter your password" required />
+            <button type="button" class="pw-toggle" onclick="togglePassword()">
+              <i class="fas fa-eye" id="pwIcon"></i>
+            </button>
+          </div>
+        </div>
+        <div class="form-check">
+          <input type="checkbox" id="remember" name="remember" />
+          <label for="remember">Remember me</label>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">
+          <i class="fas fa-sign-in-alt"></i> Sign In
+        </button>
+      </form>
+
+      <div class="login-hint">
+        <i class="fas fa-shield-alt"></i>
+        Secure &amp; authenticated access only
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function togglePassword() {
+  const pw = document.getElementById('password');
+  const icon = document.getElementById('pwIcon');
+  if (pw.type === 'password') {
+    pw.type = 'text';
+    icon.classList.replace('fa-eye', 'fa-eye-slash');
+  } else {
+    pw.type = 'password';
+    icon.classList.replace('fa-eye-slash', 'fa-eye');
+  }
+}
+</script>
+{% endblock %}
