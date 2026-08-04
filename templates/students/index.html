@@ -41,6 +41,7 @@
             <th>Class</th>
             <th>Gender</th>
             <th>RFID</th>
+            <th>Biometric</th>
             <th>Guardian</th>
             <th>Actions</th>
           </tr>
@@ -60,6 +61,13 @@
             <td>
               {% if student.rfid_tag %}
                 <code class="rfid-tag">{{ student.rfid_tag }}</code>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if student.biometric_id %}
+                <code class="biometric-tag">{{ student.biometric_id }}</code>
               {% else %}
                 <span class="text-muted">—</span>
               {% endif %}

@@ -57,6 +57,7 @@ class Student(db.Model):
     gender = db.Column(db.Enum('Male', 'Female'), nullable=False)
     class_id = db.Column(db.Integer, db.ForeignKey('classes.id'), nullable=False)
     rfid_tag = db.Column(db.String(50), unique=True)
+    biometric_id = db.Column(db.String(80), unique=True)
     photo = db.Column(db.String(256))
     address = db.Column(db.Text)
     is_active = db.Column(db.Boolean, default=True)

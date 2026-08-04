@@ -71,20 +71,27 @@ def index():
                            not_marked=not_marked)
 
 
+def _find_student_by_identifier(identifier: str):
+    return (
+        Student.query.filter_by(student_id=identifier, is_active=True).first() or
+        Student.query.filter_by(rfid_tag=identifier, is_active=True).first() or
+        Student.query.filter_by(biometric_id=identifier, is_active=True).first()
+    )
+
+
 @attendance_bp.route('/mark-arrival', methods=['GET', 'POST'])
 @login_required
 def mark_arrival():
     if request.method == 'POST':
         identifier = request.form.get('identifier', '').strip()
         if not identifier:
-            flash('Please enter a student ID or RFID tag.', 'warning')
+            flash('Please enter a student ID, RFID tag, or biometric credential.', 'warning')
             return render_template('attendance/mark_arrival.html')
 
-        student = (Student.query.filter_by(student_id=identifier, is_active=True).first() or
-                   Student.query.filter_by(rfid_tag=identifier, is_active=True).first())
+        student = _find_student_by_identifier(identifier)
 
         if not student:
-            flash(f'No active student found with ID or RFID: {identifier}', 'danger')
+            flash(f'No active student found with ID, RFID tag, or biometric credential: {identifier}', 'danger')
             return render_template('attendance/mark_arrival.html')
 
         today = date.today()
@@ -132,14 +139,13 @@ def mark_departure():
     if request.method == 'POST':
         identifier = request.form.get('identifier', '').strip()
         if not identifier:
-            flash('Please enter a student ID or RFID tag.', 'warning')
+            flash('Please enter a student ID, RFID tag, or biometric credential.', 'warning')
             return render_template('attendance/mark_departure.html')
 
-        student = (Student.query.filter_by(student_id=identifier, is_active=True).first() or
-                   Student.query.filter_by(rfid_tag=identifier, is_active=True).first())
+        student = _find_student_by_identifier(identifier)
 
         if not student:
-            flash(f'No active student found with ID or RFID: {identifier}', 'danger')
+            flash(f'No active student found with ID, RFID tag, or biometric credential: {identifier}', 'danger')
             return render_template('attendance/mark_departure.html')
 
         today = date.today()
@@ -203,13 +209,12 @@ def mark_absent():
 @attendance_bp.route('/api/lookup')
 @login_required
 def api_lookup():
-    """Quick lookup for RFID/ID scan — returns student info as JSON."""
+    """Quick lookup for RFID/ID/biometric credential scan — returns student info as JSON."""
     identifier = request.args.get('id', '').strip()
     if not identifier:
         return jsonify({'found': False})
 
-    student = (Student.query.filter_by(student_id=identifier, is_active=True).first() or
-               Student.query.filter_by(rfid_tag=identifier, is_active=True).first())
+    student = _find_student_by_identifier(identifier)
 
     if not student:
         return jsonify({'found': False})
@@ -222,6 +227,8 @@ def api_lookup():
         'student_id': student.student_id,
         'full_name': student.full_name,
         'class_name': student.class_.name,
+        'rfid_tag': student.rfid_tag,
+        'biometric_id': student.biometric_id,
         'arrived': bool(record and record.arrival_time),
         'departed': bool(record and record.departure_time),
         'status': record.status if record else None,

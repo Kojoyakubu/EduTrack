@@ -42,9 +42,15 @@
                  value="{{ student.date_of_birth.isoformat() if student.date_of_birth else '' }}" />
         </div>
       </div>
-      <div class="form-group">
-        <label>RFID Tag</label>
-        <input type="text" name="rfid_tag" class="form-control" value="{{ student.rfid_tag or '' }}" />
+      <div class="form-row">
+        <div class="form-group">
+          <label>RFID Tag</label>
+          <input type="text" name="rfid_tag" class="form-control" value="{{ student.rfid_tag or '' }}" />
+        </div>
+        <div class="form-group">
+          <label>Biometric Credential</label>
+          <input type="text" name="biometric_id" class="form-control" value="{{ student.biometric_id or '' }}" />
+        </div>
       </div>
       <div class="form-group">
         <label>Address</label>

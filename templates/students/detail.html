@@ -48,6 +48,12 @@
           <span><code>{{ student.rfid_tag }}</code></span>
         </div>
         {% endif %}
+        {% if student.biometric_id %}
+        <div class="detail-row">
+          <span class="detail-label"><i class="fas fa-fingerprint"></i> Biometric Credential</span>
+          <span><code>{{ student.biometric_id }}</code></span>
+        </div>
+        {% endif %}
         {% if student.address %}
         <div class="detail-row">
           <span class="detail-label"><i class="fas fa-home"></i> Address</span>

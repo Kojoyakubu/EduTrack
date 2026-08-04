@@ -16,7 +16,7 @@
     <div class="card-body">
       <div class="info-box">
         <i class="fas fa-info-circle"></i>
-        Enter a student ID or RFID tag number to record their departure. A parent notification will be sent.
+        Enter a student ID, RFID tag, or biometric credential to record their departure. A parent notification will be sent.
       </div>
 
       <form method="POST" action="{{ url_for('attendance.mark_departure') }}" id="departureForm">
@@ -51,7 +51,7 @@
     </div>
     <div class="card-body">
       <ol class="how-it-works">
-        <li>Student presents RFID card or provides their ID</li>
+        <li>Student presents RFID card, a biometric credential, or provides their ID</li>
         <li>Staff enters/scans the identifier above</li>
         <li>System records the exact departure time</li>
         <li>Parent/Guardian receives an email notification automatically</li>

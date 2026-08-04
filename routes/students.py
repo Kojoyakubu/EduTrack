@@ -42,6 +42,7 @@ def register():
         gender = request.form.get('gender')
         class_id = request.form.get('class_id')
         rfid_tag = request.form.get('rfid_tag', '').strip() or None
+        biometric_id = request.form.get('biometric_id', '').strip() or None
         address = request.form.get('address', '').strip()
 
         # Guardian info
@@ -62,6 +63,10 @@ def register():
             flash('This RFID tag is already assigned to another student.', 'danger')
             return render_template('students/register.html', classes=classes)
 
+        if biometric_id and Student.query.filter_by(biometric_id=biometric_id).first():
+            flash('This biometric credential is already assigned to another student.', 'danger')
+            return render_template('students/register.html', classes=classes)
+
         from datetime import date as date_type
         dob_parsed = None
         if dob:
@@ -78,6 +83,7 @@ def register():
             gender=gender,
             class_id=int(class_id),
             rfid_tag=rfid_tag,
+            biometric_id=biometric_id,
             address=address
         )
         db.session.add(student)
@@ -126,13 +132,20 @@ def edit(student_id):
         student.class_id = int(request.form.get('class_id'))
         student.address = request.form.get('address', '').strip()
         rfid_tag = request.form.get('rfid_tag', '').strip() or None
+        biometric_id = request.form.get('biometric_id', '').strip() or None
 
         if rfid_tag and rfid_tag != student.rfid_tag:
             existing = Student.query.filter_by(rfid_tag=rfid_tag).first()
             if existing and existing.id != student.id:
                 flash('This RFID tag is already in use.', 'danger')
                 return render_template('students/edit.html', student=student, classes=classes)
+        if biometric_id and biometric_id != student.biometric_id:
+            existing = Student.query.filter_by(biometric_id=biometric_id).first()
+            if existing and existing.id != student.id:
+                flash('This biometric credential is already in use.', 'danger')
+                return render_template('students/edit.html', student=student, classes=classes)
         student.rfid_tag = rfid_tag
+        student.biometric_id = biometric_id
 
         dob = request.form.get('date_of_birth')
         if dob:

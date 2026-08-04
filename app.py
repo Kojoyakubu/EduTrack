@@ -3,8 +3,7 @@ from datetime import datetime
 from config import Config
 from extensions import db, login_manager
 from models import User, Class, Setting
-from werkzeug.security import generate_password_hash
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text, inspect
 from sqlalchemy.exc import SQLAlchemyError
 
 
@@ -53,9 +52,26 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        _ensure_student_biometric_column()
         _seed_defaults()
 
     return app
+
+
+def _ensure_student_biometric_column():
+    """Backfill the biometric credential column for existing databases."""
+    inspector = inspect(db.engine)
+    columns = [col['name'] for col in inspector.get_columns('students')]
+    if 'biometric_id' in columns:
+        return
+
+    dialect = db.engine.dialect.name
+    with db.engine.begin() as conn:
+        if dialect == 'sqlite':
+            conn.execute(text('ALTER TABLE students ADD COLUMN biometric_id VARCHAR(80)'))
+            conn.execute(text('CREATE UNIQUE INDEX IF NOT EXISTS ix_students_biometric_id ON students (biometric_id)'))
+        else:
+            conn.execute(text('ALTER TABLE students ADD COLUMN biometric_id VARCHAR(80) UNIQUE'))
 
 
 def _seed_defaults():
