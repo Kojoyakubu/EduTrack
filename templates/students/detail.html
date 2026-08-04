@@ -174,9 +174,23 @@ function showBiometricStatus(message, kind = 'info') {
   biometricStatus.textContent = message;
 }
 
-if (enrollBiometricBtn && window.PublicKeyCredential && navigator.credentials && navigator.credentials.create) {
+if (enrollBiometricBtn) {
   enrollBiometricBtn.addEventListener('click', async function () {
+    if (!window.PublicKeyCredential || !navigator.credentials || !navigator.credentials.create) {
+      showBiometricStatus('This browser does not support WebAuthn fingerprint enrollment. Use a modern Edge/Chrome browser on a device with Windows Hello or a supported fingerprint reader.', 'warning');
+      return;
+    }
+
     try {
+      const platformAuthenticatorAvailable = window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable;
+      if (typeof platformAuthenticatorAvailable === 'function') {
+        const supported = await platformAuthenticatorAvailable();
+        if (!supported) {
+          showBiometricStatus('No platform fingerprint authenticator is available on this device/browser. Please use a browser/device that exposes Windows Hello or a compatible fingerprint sensor.', 'warning');
+          return;
+        }
+      }
+
       showBiometricStatus('Preparing fingerprint enrollment...', 'info');
       const optionsResp = await fetch('{{ url_for("biometric.register_options", student_id=student.id) }}');
       const optionsData = await optionsResp.json();
