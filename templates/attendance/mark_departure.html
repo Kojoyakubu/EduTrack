@@ -19,6 +19,12 @@
         Enter a student ID, RFID tag, or biometric credential to record their departure. A parent notification will be sent.
       </div>
 
+      <div class="form-actions" style="margin-bottom: 14px;">
+        <button type="button" class="btn btn-outline" id="fingerprintBtn">
+          <i class="fas fa-fingerprint"></i> Use Laptop Fingerprint
+        </button>
+      </div>
+
       <form method="POST" action="{{ url_for('attendance.mark_departure') }}" id="departureForm">
         <div class="scanner-input-group">
           <input type="text" name="identifier" id="identifier" class="form-control scanner-input"
@@ -81,5 +87,50 @@ document.getElementById('identifier').addEventListener('keydown', function(e) {
     }
   }
 });
+
+const fingerprintBtn = document.getElementById('fingerprintBtn');
+if (fingerprintBtn && window.PublicKeyCredential && navigator.credentials && navigator.credentials.get) {
+  fingerprintBtn.addEventListener('click', async function () {
+    try {
+      const optionsResp = await fetch('{{ url_for("biometric.auth_options") }}');
+      const optionsData = await optionsResp.json();
+      if (!optionsData.ok && optionsData.message) {
+        alert(optionsData.message);
+        return;
+      }
+      const assertion = await navigator.credentials.get({ publicKey: optionsData });
+      const assertionJson = {
+        id: assertion.id,
+        rawId: btoa(String.fromCharCode(...new Uint8Array(assertion.rawId))),
+        response: {
+          clientDataJSON: btoa(String.fromCharCode(...new Uint8Array(assertion.response.clientDataJSON))),
+          authenticatorData: btoa(String.fromCharCode(...new Uint8Array(assertion.response.authenticatorData))),
+          signature: btoa(String.fromCharCode(...new Uint8Array(assertion.response.signature))),
+          userHandle: assertion.response.userHandle ? btoa(String.fromCharCode(...new Uint8Array(assertion.response.userHandle))) : null
+        },
+        authenticatorAttachment: assertion.authenticatorAttachment,
+        clientExtensionResults: assertion.getClientExtensionResults(),
+        type: assertion.type
+      };
+      const verifyResp = await fetch('{{ url_for("biometric.verify") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: assertionJson })
+      });
+      const verifyData = await verifyResp.json();
+      if (!verifyData.ok) {
+        alert(verifyData.message || 'Fingerprint verification failed.');
+        return;
+      }
+      document.getElementById('identifier').value = verifyData.student_id;
+      document.getElementById('departureForm').submit();
+    } catch (err) {
+      alert('Fingerprint verification is unavailable in this browser or device context.');
+    }
+  });
+} else {
+  fingerprintBtn.disabled = true;
+  fingerprintBtn.innerHTML = '<i class="fas fa-fingerprint"></i> Browser fingerprint not available';
+}
 </script>
 {% endblock %}

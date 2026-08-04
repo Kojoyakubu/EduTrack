@@ -9,6 +9,9 @@
     <a href="{{ url_for('students.edit', student_id=student.id) }}" class="btn btn-outline">
       <i class="fas fa-edit"></i> Edit
     </a>
+    <button type="button" class="btn btn-outline" id="enrollBiometricBtn">
+      <i class="fas fa-fingerprint"></i> Enroll Fingerprint
+    </button>
     <a href="{{ url_for('reports.student_report', student_id=student.id) }}" class="btn btn-primary">
       <i class="fas fa-chart-bar"></i> Report
     </a>
@@ -121,6 +124,8 @@
   </div>
 </div>
 
+<div id="biometricStatus" class="alert" style="display:none; margin-top: 16px;"></div>
+
 <!-- Recent Attendance -->
 <div class="card mt-4">
   <div class="card-header">
@@ -156,4 +161,62 @@
     {% endif %}
   </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const enrollBiometricBtn = document.getElementById('enrollBiometricBtn');
+const biometricStatus = document.getElementById('biometricStatus');
+
+function showBiometricStatus(message, kind = 'info') {
+  biometricStatus.style.display = 'block';
+  biometricStatus.className = `alert alert-${kind}`;
+  biometricStatus.textContent = message;
+}
+
+if (enrollBiometricBtn && window.PublicKeyCredential && navigator.credentials && navigator.credentials.create) {
+  enrollBiometricBtn.addEventListener('click', async function () {
+    try {
+      showBiometricStatus('Preparing fingerprint enrollment...', 'info');
+      const optionsResp = await fetch('{{ url_for("biometric.register_options", student_id=student.id) }}');
+      const optionsData = await optionsResp.json();
+      if (!optionsData.challenge) {
+        showBiometricStatus('Fingerprint enrollment is not available right now.', 'danger');
+        return;
+      }
+
+      const credential = await navigator.credentials.create({ publicKey: optionsData });
+      const registration = {
+        id: credential.id,
+        rawId: btoa(String.fromCharCode(...new Uint8Array(credential.rawId))),
+        response: {
+          clientDataJSON: btoa(String.fromCharCode(...new Uint8Array(credential.response.clientDataJSON))),
+          attestationObject: btoa(String.fromCharCode(...new Uint8Array(credential.response.attestationObject))),
+          transports: credential.response.getTransports ? credential.response.getTransports() : []
+        },
+        authenticatorAttachment: credential.authenticatorAttachment,
+        clientExtensionResults: credential.getClientExtensionResults(),
+        type: credential.type
+      };
+
+      const saveResp = await fetch('{{ url_for("biometric.register") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: registration })
+      });
+      const saveData = await saveResp.json();
+      if (saveResp.ok && saveData.ok) {
+        showBiometricStatus('Fingerprint credential enrolled successfully.', 'success');
+      } else {
+        showBiometricStatus(saveData.message || 'Fingerprint enrollment failed.', 'danger');
+      }
+    } catch (err) {
+      showBiometricStatus('This browser or device does not expose a platform fingerprint authenticator.', 'warning');
+    }
+  });
+} else {
+  enrollBiometricBtn.disabled = true;
+  enrollBiometricBtn.innerHTML = '<i class="fas fa-fingerprint"></i> Fingerprint not available';
+}
+</script>
 {% endblock %}

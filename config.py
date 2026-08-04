@@ -32,6 +32,11 @@ class Config:
     TWILIO_FROM_NUMBER = os.environ.get('TWILIO_FROM_NUMBER') or ''
     TWILIO_MESSAGING_SERVICE_SID = os.environ.get('TWILIO_MESSAGING_SERVICE_SID') or ''
 
+    # WebAuthn / biometric config
+    WEBAUTHN_RP_ID = os.environ.get('WEBAUTHN_RP_ID') or 'localhost'
+    WEBAUTHN_RP_NAME = os.environ.get('WEBAUTHN_RP_NAME') or 'EDU TRACK'
+    WEBAUTHN_ORIGIN = os.environ.get('WEBAUTHN_ORIGIN') or 'http://localhost:5000'
+
     # School info
     SCHOOL_NAME = 'Oyoko Methodist Senior High School'
     SCHOOL_SHORT = 'EDU TRACK'

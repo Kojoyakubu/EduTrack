@@ -111,6 +111,22 @@ class Attendance(db.Model):
         return f'<Attendance student={self.student_id} date={self.date}>'
 
 
+class BiometricCredential(db.Model):
+    __tablename__ = 'biometric_credentials'
+
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('students.id'), nullable=False, unique=True)
+    credential_id = db.Column(db.String(255), nullable=False)
+    public_key = db.Column(db.Text, nullable=False)
+    sign_count = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    student = db.relationship('Student', backref='biometric_credential')
+
+    def __repr__(self):
+        return f'<BiometricCredential student={self.student_id}>'
+
+
 class NotificationLog(db.Model):
     __tablename__ = 'notification_logs'
 

@@ -38,6 +38,7 @@ def create_app():
     from routes.attendance import attendance_bp
     from routes.reports import reports_bp
     from routes.admin import admin_bp
+    from routes.biometrics import biometric_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -45,6 +46,7 @@ def create_app():
     app.register_blueprint(attendance_bp)
     app.register_blueprint(reports_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(biometric_bp)
 
     @app.context_processor
     def inject_now():
