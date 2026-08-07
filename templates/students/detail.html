@@ -165,26 +165,47 @@
 
 {% block extra_scripts %}
 <script>
-const enrollBiometricBtn = document.getElementById('enrollBiometricBtn');
-const biometricStatus = document.getElementById('biometricStatus');
+function initBiometricEnrollment() {
+  console.log('[Biometric] Initializing enrollment button...');
+  
+  const enrollBiometricBtn = document.getElementById('enrollBiometricBtn');
+  const biometricStatus = document.getElementById('biometricStatus');
+  
+  console.log('[Biometric] Button element:', enrollBiometricBtn);
+  console.log('[Biometric] Status element:', biometricStatus);
+  
+  if (!enrollBiometricBtn) {
+    console.error('[Biometric] Enroll button not found in DOM');
+    return;
+  }
+  
+  if (!biometricStatus) {
+    console.error('[Biometric] Status message element not found in DOM');
+    return;
+  }
 
-function showBiometricStatus(message, kind = 'info') {
-  biometricStatus.style.display = 'block';
-  biometricStatus.className = `alert alert-${kind}`;
-  biometricStatus.textContent = message;
-}
+  function showBiometricStatus(message, kind = 'info') {
+    console.log('[Biometric]', kind.toUpperCase(), message);
+    biometricStatus.style.display = 'block';
+    biometricStatus.className = `alert alert-${kind}`;
+    biometricStatus.textContent = message;
+  }
 
-if (enrollBiometricBtn) {
   enrollBiometricBtn.addEventListener('click', async function () {
+    console.log('[Biometric] Enroll button clicked');
+    
     if (!window.PublicKeyCredential || !navigator.credentials || !navigator.credentials.create) {
+      console.warn('[Biometric] WebAuthn not supported');
       showBiometricStatus('This browser does not support WebAuthn fingerprint enrollment. Use a modern Edge/Chrome browser on a device with Windows Hello or a supported fingerprint reader.', 'warning');
       return;
     }
 
     try {
+      console.log('[Biometric] Checking platform authenticator availability...');
       const platformAuthenticatorAvailable = window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable;
       if (typeof platformAuthenticatorAvailable === 'function') {
         const supported = await platformAuthenticatorAvailable();
+        console.log('[Biometric] Platform authenticator available:', supported);
         if (!supported) {
           showBiometricStatus('No platform fingerprint authenticator is available on this device/browser. Please use a browser/device that exposes Windows Hello or a compatible fingerprint sensor.', 'warning');
           return;
@@ -192,14 +213,22 @@ if (enrollBiometricBtn) {
       }
 
       showBiometricStatus('Preparing fingerprint enrollment...', 'info');
+      console.log('[Biometric] Fetching registration options for student {{ student.id }}...');
       const optionsResp = await fetch('{{ url_for("biometric.register_options", student_id=student.id) }}');
+      console.log('[Biometric] Options response status:', optionsResp.status);
+      
       const optionsData = await optionsResp.json();
+      console.log('[Biometric] Options data:', optionsData);
+      
       if (!optionsData.challenge) {
         showBiometricStatus('Fingerprint enrollment is not available right now.', 'danger');
         return;
       }
 
+      console.log('[Biometric] Requesting credential creation...');
       const credential = await navigator.credentials.create({ publicKey: optionsData });
+      console.log('[Biometric] Credential created:', credential);
+      
       const registration = {
         id: credential.id,
         rawId: btoa(String.fromCharCode(...new Uint8Array(credential.rawId))),
@@ -213,24 +242,38 @@ if (enrollBiometricBtn) {
         type: credential.type
       };
 
+      console.log('[Biometric] Saving credential to server...');
       const saveResp = await fetch('{{ url_for("biometric.register") }}', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ credential: registration })
       });
+      console.log('[Biometric] Save response status:', saveResp.status);
+      
       const saveData = await saveResp.json();
+      console.log('[Biometric] Save response data:', saveData);
+      
       if (saveResp.ok && saveData.ok) {
         showBiometricStatus('Fingerprint credential enrolled successfully.', 'success');
       } else {
         showBiometricStatus(saveData.message || 'Fingerprint enrollment failed.', 'danger');
       }
     } catch (err) {
-      showBiometricStatus('This browser or device does not expose a platform fingerprint authenticator.', 'warning');
+      console.error('[Biometric] Error during enrollment:', err);
+      showBiometricStatus('Error: ' + (err.message || 'This browser or device does not expose a platform fingerprint authenticator.'), 'warning');
     }
   });
+  
+  console.log('[Biometric] Enrollment button listener attached successfully');
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+  console.log('[Biometric] DOM still loading, waiting for DOMContentLoaded...');
+  document.addEventListener('DOMContentLoaded', initBiometricEnrollment);
 } else {
-  enrollBiometricBtn.disabled = true;
-  enrollBiometricBtn.innerHTML = '<i class="fas fa-fingerprint"></i> Fingerprint not available';
+  console.log('[Biometric] DOM already loaded, initializing now...');
+  initBiometricEnrollment();
 }
 </script>
 {% endblock %}
