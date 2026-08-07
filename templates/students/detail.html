@@ -165,6 +165,30 @@
 
 {% block extra_scripts %}
 <script>
+// Helper to convert base64url string to ArrayBuffer
+function base64urlToArrayBuffer(base64urlStr) {
+  const base64 = base64urlStr.replace(/-/g, '+').replace(/_/g, '/');
+  const padLen = (4 - (base64.length % 4)) % 4;
+  const padded = base64 + '='.repeat(padLen);
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
+// Helper to convert ArrayBuffer to base64url string
+function arrayBufferToBase64url(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const base64 = btoa(binary);
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
 function initBiometricEnrollment() {
   console.log('[Biometric] Initializing enrollment button...');
   
@@ -218,23 +242,42 @@ function initBiometricEnrollment() {
       console.log('[Biometric] Options response status:', optionsResp.status);
       
       const optionsData = await optionsResp.json();
-      console.log('[Biometric] Options data:', optionsData);
+      console.log('[Biometric] Raw options data:', optionsData);
       
       if (!optionsData.challenge) {
         showBiometricStatus('Fingerprint enrollment is not available right now.', 'danger');
         return;
       }
 
+      // Convert base64url fields back to ArrayBuffer for WebAuthn API
+      console.log('[Biometric] Converting base64url fields to ArrayBuffers...');
+      optionsData.challenge = base64urlToArrayBuffer(optionsData.challenge);
+      if (optionsData.user && optionsData.user.id) {
+        optionsData.user.id = base64urlToArrayBuffer(optionsData.user.id);
+      }
+      if (optionsData.excludeCredentials) {
+        optionsData.excludeCredentials = optionsData.excludeCredentials.map(cred => ({
+          ...cred,
+          id: base64urlToArrayBuffer(cred.id)
+        }));
+      }
+      console.log('[Biometric] Converted options:', optionsData);
+
       console.log('[Biometric] Requesting credential creation...');
       const credential = await navigator.credentials.create({ publicKey: optionsData });
       console.log('[Biometric] Credential created:', credential);
       
+      if (!credential) {
+        showBiometricStatus('Enrollment cancelled or credential creation failed.', 'warning');
+        return;
+      }
+
       const registration = {
         id: credential.id,
-        rawId: btoa(String.fromCharCode(...new Uint8Array(credential.rawId))),
+        rawId: arrayBufferToBase64url(credential.rawId),
         response: {
-          clientDataJSON: btoa(String.fromCharCode(...new Uint8Array(credential.response.clientDataJSON))),
-          attestationObject: btoa(String.fromCharCode(...new Uint8Array(credential.response.attestationObject))),
+          clientDataJSON: arrayBufferToBase64url(credential.response.clientDataJSON),
+          attestationObject: arrayBufferToBase64url(credential.response.attestationObject),
           transports: credential.response.getTransports ? credential.response.getTransports() : []
         },
         authenticatorAttachment: credential.authenticatorAttachment,
